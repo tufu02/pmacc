@@ -11,11 +11,10 @@ android {
         applicationId = "com.pg.pmacc"
         minSdk = 24
         targetSdk = 34
-        versionCode = 2
-        versionName = "2.0"
+        versionCode = 1
+        versionName = "1.0"
     }
 
-    // 固定签名：GitHub 构建出来的包和本地修改后的包签名一致，可以直接覆盖安装
     signingConfigs {
         create("fixed") {
             storeFile = rootProject.file("keystore/pmacc.jks")
@@ -34,13 +33,16 @@ android {
             signingConfig = signingConfigs.getByName("fixed")
         }
     }
-
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    kotlinOptions { jvmTarget = "17" }
+    kotlinOptions {
+        jvmTarget = "17"
+    }
 }
 
 dependencies {
+    implementation("androidx.appcompat:appcompat:1.7.0")
+    implementation("androidx.core:core-ktx:1.13.1")
 }
