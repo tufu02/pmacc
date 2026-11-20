@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>PM Acc Manager</title>
+<style>
+  :root{color-scheme:dark}
+  *{box-sizing:border-box}
+  body{margin:0;padding:14px 14px 28px;background:#121212;color:#e8e8e8;
+       font:14px/1.5 -apple-system,"Segoe UI",Roboto,"Noto Sans SC",sans-serif}
+  h1{font-size:18px;margin:0 0 2px}
+  .sub{font-size:12px;color:#8f8f8f;margin-bottom:14px}
+  h2{font-size:14px;margin:18px 0 8px;color:#bdbdbd;font-weight:600}
+  .row{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid #262626}
+  .name{flex:1;font-size:13px;word-break:break-all}
+  .muted{color:#888;font-size:12px}
+  button{border:0;border-radius:8px;padding:9px 13px;font-size:13px;background:#2f6fed;color:#fff}
+  button.grey{background:#333}
+  button.red{background:#9c2f2f}
+  button:disabled{opacity:.45}
+  .bar{display:flex;gap:8px;margin:10px 0 4px}
+  .bar input{flex:1;background:#1e1e1e;border:1px solid #333;color:#eee;border-radius:8px;padding:9px 11px;font-size:13px}
+  .empty{color:#7a7a7a;font-size:13px;padding:16px 0}
+  .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:#2b2b2b;color:#fff;
+         padding:9px 16px;border-radius:20px;font-size:13px;opacity:0;transition:opacity .25s;pointer-events:none}
+  .toast.on{opacity:1}
+</style>
+</head>
+<body>
+  <h1>PM Acc Manager</h1>
+  <div class="sub">登录回调 + Pokemod 账号快照</div>
+
+  <h2>登录回调</h2>
+  <div class="sub" style="margin:0 0 6px">
+    在 Pokémon GO 点登录 → 浏览器登录完 → 系统弹“用哪个应用打开”时选本应用，回调就会出现在下面。
+  </div>
+  <div id="cbs"></div>
+
+  <h2>账号快照</h2>
+  <div class="bar">
+    <input id="accName" placeholder="账号名（默认取当前登录账号）">
+    <button onclick="saveAcc()">保存当前</button>
+  </div>
+  <div id="accs"></div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function toast(t){var e=document.getElementById('toast');e.textContent=t;e.classList.add('on');
+  clearTimeout(window.__t);window.__t=setTimeout(function(){e.classList.remove('on')},1800)}
+function call(fn){try{return window.N? window.N[fn].apply(window.N,[].slice.call(arguments,1)) : ''}catch(e){return 'ERR '+e}}
+
+function loadCbs(){
+  var arr=[]; try{arr=JSON.parse(call('callbacks')||'[]')}catch(e){}
+  var box=document.getElementById('cbs');
+  if(!arr.length){box.innerHTML='<div class="empty">还没有捕获到回调</div>';return}
+  box.innerHTML=arr.map(function(n){
+    return '<div class="row"><div class="name">'+esc(n)+'</div>'+
+      '<button onclick="sendCb(\\''+esc(n)+'\\')">登录 PoGo</button>'+
+      '<button class="red" onclick="delCb(\\''+esc(n)+'\\')">删</button></div>'}).join('');
+}
+function sendCb(n){var r=call('sendCallback',n);toast(r==='ok'?'已发送给 Pokémon GO':('失败：'+r))}
+function delCb(n){call('delCallback',n);loadCbs()}
+
+function loadAccs(){
+  var arr=[]; try{arr=JSON.parse(call('accounts')||'[]')}catch(e){}
+  var box=document.getElementById('accs');
+  if(!arr.length){box.innerHTML='<div class="empty">还没有保存的账号</div>';return}
+  box.innerHTML=arr.map(function(n){
+    return '<div class="row"><div class="name">'+esc(n)+'</div>'+
+      '<button onclick="useAcc(\\''+esc(n)+'\\')">切换</button>'+
+      '<button class="red" onclick="delAcc(\\''+esc(n)+'\\')">删</button></div>'}).join('');
+}
+function saveAcc(){
+  var i=document.getElementById('accName');
+  var n=i.value.trim()||call('activeAccount')||('acc-'+Date.now());
+  var r=call('saveAccount',n);
+  toast(r==='ok'?('已保存：'+n):('失败：'+r));
+  i.value=''; loadAccs();
+}
+function useAcc(n){var r=call('useAccount',n);toast(r==='ok'?('已切换到：'+n):('失败：'+r))}
+function delAcc(n){call('delAccount',n);loadAccs()}
+
+loadCbs();loadAccs();
+</script>
+</body>
+</html>
