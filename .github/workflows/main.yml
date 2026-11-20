@@ -1,0 +1,31 @@
+name: build-apk
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: '8.7'
+      - name: Build
+        run: |
+          SDKDIR="${ANDROID_SDK_ROOT:-$ANDROID_HOME}"
+          if [ -f settings.gradle.kts ]; then DIR=.; else DIR=$(dirname "$(find . -name settings.gradle.kts | head -1)"); fi
+          echo "工程目录: $DIR   SDK: $SDKDIR"
+          echo "sdk.dir=$SDKDIR" > "$DIR/local.properties"
+          gradle -p "$DIR" assembleDebug --no-daemon --stacktrace
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pmacc-apk
+          path: |
+            app/build/outputs/apk/debug/*.apk
+            */app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
